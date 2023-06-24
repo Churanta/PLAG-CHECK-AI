@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <title>Plagiarism Checker and AI Text Detection</title>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    <style>
+      @import url("https://fonts.googleapis.com/css2?family=Luckiest+Guy&display=swap");
+
+      :root{
+        --color1: #01579B;
+        --color2: #00838F;
+        --color3: #FFD600;
+        --color4: #FF4081;
+        --color5: #F44336;
+      }
+
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      h1:first-of-type {
+  font-size: 7vh !important;
+}
+
+
+      h1 {
+        color: #fff;
+        text-transform: uppercase;
+        
+        text-align: center;
+        font-family: "Luckiest Guy", cursive;
+        line-height: 150%;
+        background:linear-gradient(225deg,
+          var(--color1) 0%, var(--color1) 9%,
+          transparent 9%, 
+          var(--color2) 10%, var(--color2) 19%,
+          transparent 19%, 
+          var(--color3) 20%, var(--color3) 29%,
+          transparent 29%, 
+          var(--color4) 30%, var(--color4) 39%,
+          transparent 39%, 
+          var(--color5) 40%, var(--color5) 49%,
+          transparent 49%, 
+          var(--color1) 50%, var(--color1) 59%,
+          transparent 59%, 
+          var(--color2) 60%, var(--color2) 69%,
+          transparent 69%, 
+          var(--color3) 70%, var(--color3) 79%,
+          transparent 79%, 
+          var(--color4) 80%, var(--color4) 89%,
+          transparent 89%, 
+          var(--color5) 90%, var(--color5) 99%,
+          transparent 99%
+        );
+        background-clip: text;
+        -webkit-background-clip: text;
+        background-size: 200% 200%;
+        color: transparent;
+        animation: move 6s linear infinite;
+      }
+
+      @keyframes move {
+        0%{
+          background-position: 0px 100%;
+        }
+        100%{
+          background-position: 100% 0px;
+        }
+      }
+
+      body {
+        background-color: #333;
+        color: #fff;
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 20px;
+      }
+
+      h1 {
+        font-size: 24px;
+        margin-top: 0;
+        text-align: center;
+      }
+
+      form {
+        margin-top: 20px;
+        text-align: center;
+      }
+
+      textarea {
+        width: 80%;
+        height: 35vh;
+        font-size: 16px;
+        padding: 10px;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+        resize: vertical;
+        min-height: 200px;
+        background-color: #282828;
+        color: #fff;
+        /* Customize the scrollbar for the textarea */
+        scrollbar-width: thin;
+        scrollbar-color: #666 #333;
+      }
+
+      input[type="submit"] {
+        background-color: #007bff;
+        color: #fff;
+        font-size: 16px;
+        padding: 10px 20px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+      }
+
+      .chart-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 40px;
+        width: 70%; /* Adjust the width as desired */
+        margin-left: auto; /* Centers the container by pushing it to the right */
+        margin-right: auto;
+      }
+
+      .chart-card {
+        background-color: #444;
+        padding: 10px;
+        border-radius: 5px;
+        margin: 20px;
+        flex-basis: 30%;
+        width: 300px;
+      }
+
+      .plagiarized-text {
+        color: red;
+        font-weight: bold;
+      }
+
+      .ai-text {
+        color: green;
+        font-weight: bold;
+      }
+
+      .output-card {
+        background-color: #444;
+        padding: 10px;
+        border-radius: 5px;
+        margin-top: 20px;
+      }
+
+      .highlight {
+        background-color: blue;
+        font-weight: bold;
+        display: inline-block;
+        padding: 2px 5px;
+        border-radius: 3px;
+        margin-right: 3px;
+      }
+
+      /* Customize the scrollbar */
+      ::-webkit-scrollbar {
+        width: 10px;
+      }
+
+      ::-webkit-scrollbar-track {
+        background-color: #333;
+      }
+
+      ::-webkit-scrollbar-thumb {
+        background-color: #666;
+        border-radius: 5px;
+      }
+
+      ::-webkit-scrollbar-thumb:hover {
+        background-color: #888;
+      }
+      .animation-container {
+        position: absolute;
+        top: 0px;
+        left: 450px;
+        width: 100px;
+        height: 100px;
+        z-index: 9999;
+      }
+      .submit-btn {
+    display: inline-block;
+    padding: 10px 20px;
+    background: linear-gradient(45deg, #FF5E7D, #FF8E53);
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+    text-transform: uppercase;
+    border: none;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.3s ease;
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+  .submit-btn:hover {
+    background: linear-gradient(45deg, #FF8E53, #FF5E7D);
+    transform: scale(1.05);
+    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.3);
+  }
+
+
+    </style>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+      function highlightPlagiarizedText() {
+        var queryText = document.getElementById("query-text").value;
+        var plagiarizedTexts = JSON.parse("{{ plagiarized_texts|tojson }}");
+
+        plagiarizedTexts.forEach(function (text) {
+          var regex = new RegExp(text, "gi");
+          queryText = queryText.replace(
+            regex,
+            '<span class="plagiarized-text">$&</span>'
+          );
+        });
+
+        document.getElementById("query-text").innerHTML = queryText;
+      }
+    </script>
+  </head>
+  <body onload="highlightPlagiarizedText()">
+    <div class="animation-container">
+      <lottie-player
+        src="https://assets5.lottiefiles.com/packages/lf20_9NxFrGo71i.json"
+        background="transparent"
+        speed="1"
+        style="width: 120px; height: 120px;"
+        loop
+        autoplay
+      ></lottie-player>
+    </div>
+    <h1>Plag-check AI</h1>
+    <form action="/" method="POST">
+      
+      <textarea
+        name="query"
+        id="query-text"
+        placeholder="Enter query here"
+      ></textarea
+      ><br /><br />
+      <input type="submit" value="Submit" class="submit-btn" />
+    </form>
+    <div class="chart-container">
+      <div class="chart-card">
+        <canvas
+          id="plagiarism-percentage-chart"
+          width="180"
+          height="180"
+        ></canvas>
+      </div>
+      <div class="chart-card">
+        <canvas id="ai-percentage-chart" width="180" height="180"></canvas>
+      </div>
+    </div>
+    <h3 class="progress-bar-text">{{output}}</h3>
+    {% if is_ai_text %}
+    <h2 class="ai-text">AI-generated text detected!</h2>
+    {% else %}
+    <h2>AI-generated text not detected.</h2>
+    {% endif %}
+    <div class="output-card">
+      <p>
+        {% for word in query.split() %} {% if word in plagiarized_texts %}
+        <span class="highlight">{{ word }}</span>
+        {% else %} {{ word }} {% endif %} {% if not loop.last %} {% endif %} {%
+        endfor %}
+      </p>
+    </div>
+    <script>
+      // Get the plagiarism percentage and AI percentage from the template variables
+      var plagiarismPercentage = {{ percentage }};
+      var aiPercentage = {{ ai_percentage }};
+
+      // Create a chart using Chart.js for plagiarism percentage
+      var plagiarismPercentageCtx = document.getElementById("plagiarism-percentage-chart").getContext("2d");
+      var plagiarismPercentageChart = new Chart(plagiarismPercentageCtx, {
+        type: "doughnut",
+        data: {
+          labels: ["Plagiarized", "Original"],
+          datasets: [
+            {
+              data: [plagiarismPercentage, 100 - plagiarismPercentage],
+              backgroundColor: ["#39ace7", "#666666"],
+              borderWidth: 0,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          cutoutPercentage: 80,
+          legend: {
+            display: true,
+            labels: {
+              fontColor: "#fff",
+            },
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: "Plagiarism Percentage",
+              font: {
+                size: 18,
+              },
+              padding: {
+                top: 10,
+                bottom: 20
+              }
+            }
+          }
+        },
+      });
+
+      // Create a chart using Chart.js for AI percentage
+      var aiPercentageCtx = document.getElementById("ai-percentage-chart").getContext("2d");
+      var aiPercentageChart = new Chart(aiPercentageCtx, {
+        type: "doughnut",
+        data: {
+          labels: ["AI-generated", "Human-written"],
+          datasets: [
+            {
+              data: [aiPercentage, 100 - aiPercentage],
+              backgroundColor: ["#ff6eff", "#666666"],
+              borderWidth: 0,
+            },
+          ],
+        },
+        options: {
+          responsive: true,
+          cutoutPercentage: 80,
+          legend: {
+            display: true,
+            labels: {
+              fontColor: "#fff",
+            },
+          },
+          plugins: {
+            title: {
+              display: true,
+              text: "AI Text Percentage",
+              font: {
+                size: 18,
+              },
+              padding: {
+                top: 10,
+                bottom: 20
+              }
+            }
+          }
+        },
+      });
+    </script>
+  </body>
+</html>
